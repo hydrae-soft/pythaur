@@ -1,36 +1,30 @@
 #!/usr/bin/env python
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from os.path import expanduser, isdir
 from shutil import rmtree
 from sys import exit
-from typing import List
-import signal
-
 from models.package import Package, is_on_aur
 from operations.install import clone, install
+import signal
 
-aur_dir = expanduser('~') + '/AUR/'
-
+# Destination of the cloned files
+AUR_DIR = expanduser('~') + '/AUR/'
 
 def main():
     signal.signal(signal.SIGINT,
                   signal_handler)
-    
-    start_installation(parse_arguments())
-
-
-def start_installation(args: Namespace):
-    packages = build_packages(args.install)
+    args = parse_arguments()
+    packages = create_packages_list(args.install)
     cleanup = args.cleanup
     if len(packages) > 0:
         if check_packages(packages) > 0:
-            clone(packages)
+            clone(packages, AUR_DIR)
             install(packages)
             if cleanup:
-                rmtree(aur_dir)
+                rmtree(AUR_DIR)
 
 
-def parse_arguments() -> Namespace:
+def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('-i', '--install',
                         nargs='+', required=True,
@@ -40,15 +34,16 @@ def parse_arguments() -> Namespace:
                         help='Removes cloned files from AUR.')
     return parser.parse_args()
 
-
-def build_packages(names_list: list) -> List[Package]:
+# Creates a list of packages with their AUR respective links.
+def create_packages_list(names_list: list):
     pkgs = []
     for n in names_list:
-        pkgs.append(Package(n, aur_dir + n))
+        pkgs.append(Package(n, AUR_DIR + n))
     return pkgs
 
 
-def check_packages(pkgs: List[Package]) -> int:
+# Removes packages that were not found in AUR. Will return 0 if there are no valid packages.
+def check_packages(pkgs: list) -> int:
     i = 0
     while i < len(pkgs):
         p = pkgs[i]
@@ -59,12 +54,12 @@ def check_packages(pkgs: List[Package]) -> int:
             i += 1
     return i
 
-
+# Handle Ctrl + C
 def signal_handler(_signal, _frame):
     print('Operation cancelled.')
-    if isdir(aur_dir):
+    if isdir(AUR_DIR):
         print('Cleaning up...')
-        rmtree(aur_dir)
+        rmtree(AUR_DIR)
     exit(0)
 
 

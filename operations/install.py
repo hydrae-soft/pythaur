@@ -1,25 +1,17 @@
-from git import Repo
-from os import chdir, system
+from os import chdir, mkdir
 from os.path import isdir
-from typing import List
+import subprocess
 
-from models.package import Package
-
-
-def clone(pkgs: List[Package]):
-    i = 0
-    while i < len(pkgs):
-        p = pkgs[i]
+# Where path is the destination of the cloned files.
+def clone(pkgs: list, path: str):
+    if not isdir(path):
+        mkdir(path)
+    for p in pkgs:
         if not isdir(p.directory):
-            print('Cloning %s.' % p.git_url)
-            Repo.clone_from(p.git_url, p.directory)
-        else:
-            print('\"%s\" package already exists.' % p.name)
-        i += 1
+            subprocess.run(['git', 'clone', p.git_url], cwd=path)
 
 
-def install(packages: List[Package]):
-    for p in packages:
-        chdir(p.directory)
-        system('makepkg -s')
-        system('sudo pacman -U --needed --noconfirm *.zst')
+def install(pkgs: list):
+    for p in pkgs:
+        subprocess.run(['makepkg', '-s', '-i'], cwd=p.directory)
+

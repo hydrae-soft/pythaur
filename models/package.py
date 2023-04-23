@@ -1,7 +1,6 @@
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
-
 class Package:
 
     def __init__(self, name: str, directory: str):
@@ -27,7 +26,6 @@ class Package:
     def directory(self) -> str:
         return self.__directory
 
-
 def is_on_aur(package: Package) -> bool:
     try:
         if urlopen(package.details_url).getcode() == 200:
@@ -35,3 +33,4 @@ def is_on_aur(package: Package) -> bool:
     except HTTPError:
         print('\"%s\" package was not found in AUR. HTTPError.\n' % package.name)
     return False
+
